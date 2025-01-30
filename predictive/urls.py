@@ -22,6 +22,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 urlpatterns = [
+    path('new_training_screen/', pred.new_training_screen, name='new_training_screen'),
+    path('new_ajax_sensor-data/', pred.new_ajax_success_view, name='new_ajax_sensor-data'),
+    path('new_start_training/', pred.new_start_training, name='new_start_training'),
+
 
     path('training_screen/', pred.training_screen, name='training_screen'),
     # path('ajax_sensor-data/', pred.ajax_success_view1, name='ajax_sensor-data'),
