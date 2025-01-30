@@ -12,7 +12,7 @@
         <div class="card-body">
             <h5 class="card-title">Sensor Data Input</h5>
 
-            <form method="post" id="##">
+            <form method="post" id="sensorDataForm">
                 {% csrf_token %}
                 <div class="row align-items-end">
                     <div class="col-md-3">
@@ -42,10 +42,9 @@
             
                     <!-- Added Checkbox Section -->
                     <div class="col-md-3">
-                        
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" id="additionalFeature" name="additional_feature">
-                            <label class="form-check-label" for="additionalFeature">have actual data</label>
+                            <label class="form-check-label" for="additionalFeature">Have actual data</label>
                         </div>
                     </div>
             
@@ -57,7 +56,6 @@
                 </div>
             </form>
             
-
             <!-- Chart Container (hidden initially) -->
             <div class="chart-container" id="chartContainer" style="display: none;">
                 <canvas id="chart" width="800" height="600"></canvas>
@@ -71,12 +69,11 @@
 {% block javascript %}
 <script>
     $(document).ready(function () {
-        $('#getDataButton').on('click', function (event) {
-            event.preventDefault(); // Prevent default form submission
+        $('#sensorDataForm').on('submit', function (event) {
+            event.preventDefault(); // Prevent the default form submission
 
             // Collect form data
             var additionalFeature = $('#additionalFeature').prop('checked');
-           
             var numberofpredications = $('#numberofpredications').val();
             var startDatetime = $('#startDatetime').val();
             var endDatetime = $('#endDatetime').val();
@@ -102,8 +99,7 @@
                     start_datetime: startDatetime,
                     end_datetime: endDatetime,
                     number_predications: numberofpredications,
-                    additionalFeature:additionalFeature,
-
+                    additionalFeature: additionalFeature,
                     csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val() // CSRF token for security
                 },
                 success: function (response) {
@@ -112,7 +108,6 @@
 
                     if (response.success) {
                         $('#chartContainer').show();
-                        $('#showPopupButton').show();
 
                         var ctx = document.getElementById('chart').getContext('2d');
 
@@ -142,16 +137,15 @@
                             type: 'line',
                             data: {
                                 labels: uniqueMergedValues,  // X-axis labels
-                                datasets: [ // Fixed the syntax error here by moving the 'datasets' array to the correct place
+                                datasets: [
                                     {
-                                        label: "Training Data 1",
+                                        label: "Actual Data",
                                         data: chartDataValues,
                                         borderColor: 'rgba(75, 192, 192, 1)',
                                         fill: false,
-                                      
                                     },
                                     {
-                                        label: "Training Data 2",
+                                        label: "Predictions",
                                         data: shiftedChartData1Values,
                                         borderColor: 'rgba(255, 99, 132, 1)',
                                         fill: false,
@@ -160,7 +154,7 @@
                             },
                             options: {
                                 responsive: true,
-                                maintainAspectRatio: false  
+                                maintainAspectRatio: false
                             }
                         });
                     } else {
@@ -175,8 +169,6 @@
                 }
             });
         });
-
     });
 </script>
-
 {% endblock %}
