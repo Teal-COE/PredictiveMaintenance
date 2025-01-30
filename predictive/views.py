@@ -32,7 +32,7 @@ ANOMALY_VARIABLES = {}
 def get_folders_in_directory(directory_path):
     return [f for f in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, f))]
 
-def new_ajax_success_view(request):
+def ajax_predictive_screen(request):
     """
     Handles POST requests to filter and return data based on the provided
     sensor name and date range (start_datetime and end_datetime).
@@ -42,120 +42,20 @@ def new_ajax_success_view(request):
         sensor_name = request.POST.get('sensor_name')
         start_datetime = request.POST.get('start_datetime')
         end_datetime = request.POST.get('end_datetime')
-        next_datetime = request.POST.get('next_datetime')
+        number_predications = request.POST.get('number_predications')
+        additional_feature = request.POST.get('additional_feature') == 'true' 
+        
 
+        print(sensor_name, start_datetime, end_datetime,number_predications , additional_feature, 'number_predications')
+       
+        path = f'predictive.json'
         try:
-            # Parse datetime values
-            start_dt = datetime.fromisoformat(start_datetime)
-            end_dt = datetime.fromisoformat(end_datetime)
+            data = json.loads(open(path).read())
 
-            # Return filtered data in JSON response
             return JsonResponse({
                 "success": True,
-                "data": {
-                    "chartData": [
-                        {
-                            "year": "2024-12-20T01:00:00",
-                            "value": "25",
-                            "color": "rgba(75, 192, 192, 1)"
-                        },
-                        {
-                            "year": "2024-12-20T02:00:00",
-                            "value": "27",
-                            "color": "rgba(75, 192, 192, 1)"
-                        },
-                        {
-                            "year": "2024-12-20T03:00:00",
-                            "value": "28",
-                            "color": "rgba(75, 192, 192, 1)"
-                        },
-                        {
-                            "year": "2024-12-20T03:00:00",
-                            "value": "30",
-                            "color": "rgba(75, 192, 192, 1)"
-                        },
-                        {
-                            "year": "2024-12-20T04:00:00",
-                            "value": "32",
-                            "color": "rgba(75, 192, 192, 1)"
-                        },
-                        {
-                            "year": "2024-12-20T05:00:00",
-                            "value": "25",
-                            "color": "rgba(75, 192, 192, 1)"
-                        },
-                        {
-                            "year": "2024-12-20T06:00:00",
-                            "value": "20",
-                            "color": "rgba(75, 192, 192, 1)"
-                        },
-                        {
-                            "year": "2024-12-20T07:00:00",
-                            "value": "35"
-                        },
-                        {
-                            "year": "2024-12-20T08:00:00",
-                            "value": "35"
-                        },
-                        {
-                            "year": "2024-12-20T09:00:00",
-                            "value": "30"
-                        },
-                        {
-                            "year": "2024-12-20T10:00:00",
-                            "value": "30"
-                        },
-                        {
-                            "year": "2024-12-20T11:00:00",
-                            "value": "30"
-                        },
-                        {
-                            "year": "2024-12-20T12:00:00",
-                            "value": "30"
-                        },
-                        {
-                            "year": "2024-12-20T13:00:00",
-                            "value": "24",
+                "data": data['data'],
 
-                        }
-                    ],
-                    "chartData1": [
-
-                        {
-                            "year": "2024-12-20T13:00:00",
-                            "value": "24",
-                        },
-                        {
-                            "year": "2024-12-20T14:00:00",
-                            "value": "25",
-                        },
-                        {
-                            "year": "2024-12-20T15:00:00",
-                            "value": "26",
-                        },
-                        {
-                            "year": "2024-12-20T16:00:00",
-                            "value": "27",
-                            "color": "rgba(75, 192, 192, 1)"
-                        },
-                        {
-                            "year": "2024-12-20T17:00:00",
-                            "value": "28",
-                            "color": "rgba(75, 192, 192, 1)"
-                        },
-                        {
-                            "year": "2024-12-21T18:00:00",
-                            "value": "29",
-                            "color": "rgba(75, 192, 192, 1)"
-                        },
-
-                        {
-                            "year": "2024-12-21T19:00:00",
-                            "value": "23",
-                            "color": "rgba(255, 99, 132, 1)"
-                        }
-                    ]
-                }
             })
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
@@ -163,44 +63,21 @@ def new_ajax_success_view(request):
     return JsonResponse({"success": False, "message": "Invalid request"})
 
 
-def new_start_training(request):
-    if request.method == 'POST':
-        try:
-            sensor_name = request.POST.get('sensor_name')
-            start_datetime = request.POST.get('start_datetime')
-            end_datetime = request.POST.get('end_datetime')
-
-            no_of_epochs = request.POST.get('No_of_Epochs')
-            no_of_steps = request.POST.get('No_of_steps')
-            anomaly_percentage = request.POST.get('anomaly_percentage')
-
-            print(sensor_name, start_datetime, end_datetime, no_of_epochs, no_of_steps, anomaly_percentage)
-
-            time.sleep(30)
-            return JsonResponse({'success': True, 'result': 'Training Complete'})
-
-        except Exception as e:
-            # If any error occurs, return an error response
-            return JsonResponse({'success': False, 'message': str(e)})
-
-    return JsonResponse({'success': False, 'message': 'Invalid request method'})
-
-
-def new_training_screen(request):
+def predictive_screen(request):
     """
     Retrieves all sensor data from SettingsElement and renders it in the
     'predictive_maintenance.html' template.
     """
     # sensors = SettingsElement.objects.all().order_by('-element_id')
     sensors = SettingsElement.objects.values('element_id', 'element_name').order_by('-element_id')
-    return render(request, 'new_training_screen.html', {'sensors': sensors})
-
+    return render(request, 'predictive_screen.html', {'sensors': sensors})
 
 def model_evaluation(request):
     if request.method == 'POST':
         element_name = request.POST.get('element_name')
         graph_type = request.POST.get('loss_function')
         model = request.POST.get('model_path')
+
         path = f'{MODEL_MAIN_PATH}{element_name}/{model}/{element_name}_metrics.json'
         try:
             data = json.loads(open(path).read())
