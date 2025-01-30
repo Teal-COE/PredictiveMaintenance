@@ -118,12 +118,26 @@
                         const chartData1Values = response.data.predictions.map(data => data.value);
 
                         const temlist = [];
-                        for (let i = 1; i < response.data.actual_data.length; i++) {
-                            temlist.push(null); // Adds a null value to the array
-                        }
+                        
+                        let shiftedChartData1Values = [];  // Declare outside of if block
+
+                            // Adjust the shift logic based on condition (you can replace 'true' with your actual condition)
+                            if(true){
+                                for (let i = 1; i < (response.data.actual_data.length - response.data.predictions.length); i++) {
+                                    temlist.push(null); // Adds a null value to the array
+                                }
+                                shiftedChartData1Values = [...temlist, ...chartData1Values];  // Assign outside the block
+                            } else {
+                                for (let i = 1; i < response.data.actual_data.length; i++) {
+                                    temlist.push(null); // Adds a null value to the array
+                                }
+                                shiftedChartData1Values = [...temlist, ...chartData1Values];  // Assign outside the block
+                            }
             
                         // To start the second graph from the middle, add null values at the beginning of chartData1
-                        const shiftedChartData1Values = [...temlist, ...chartData1Values];
+                        // const shiftedChartData1Values = [...temlist, ...chartData1Values];
+
+                        // const shiftedChartData1Values = [...temlist, ...chartData1Values];
 
                         const shiftedChartData1Labels = [chartDataLabels[chartDataLabels.length - 1], ...chartData1Labels];
 
