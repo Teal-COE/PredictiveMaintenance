@@ -43,7 +43,7 @@ def ajax_predictive_screen(request):
         start_datetime = request.POST.get('start_datetime')
         end_datetime = request.POST.get('end_datetime')
         number_predications = request.POST.get('number_predications')
-        additional_feature = request.POST.get('additional_feature') == 'true' 
+        additional_feature = request.POST.get('additionalFeature') == 'true'
         
 
         print(sensor_name, start_datetime, end_datetime,number_predications , additional_feature, 'number_predications')
