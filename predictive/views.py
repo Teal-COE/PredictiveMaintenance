@@ -162,6 +162,7 @@ def new_ajax_success_view(request):
 
     return JsonResponse({"success": False, "message": "Invalid request"})
 
+
 def new_start_training(request):
     if request.method == 'POST':
         try:
