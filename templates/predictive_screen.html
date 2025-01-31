@@ -44,7 +44,7 @@
                     <div class="col-md-3">
                         <div class="form-check">
                             <input type="checkbox" class="form-check-input" id="additionalFeature" name="additional_feature">
-                            <label class="form-check-label" for="additionalFeature">Have actual data</label>
+                            <label class="form-check-label" for="additionalFeature">show actual data</label>
                         </div>
                     </div>
             
@@ -113,6 +113,9 @@
 
                         const chartDataLabels = response.data.actual_data.map(data => data.time);
                         const chartDataValues = response.data.actual_data.map(data => data.value);
+                        const with_actual = response.data.is_actual;
+
+                        console.log(with_actual)
 
                         const chartData1Labels = response.data.predictions.map(data => data.time);
                         const chartData1Values = response.data.predictions.map(data => data.value);
@@ -122,8 +125,8 @@
                         let shiftedChartData1Values = [];  // Declare outside of if block
 
                             // Adjust the shift logic based on condition (you can replace 'true' with your actual condition)
-                            if(true){
-                                for (let i = 1; i < (response.data.actual_data.length - response.data.predictions.length); i++) {
+                            if(with_actual){
+                                for (let i = 0; i < (response.data.actual_data.length - response.data.predictions.length); i++) {
                                     temlist.push(null); // Adds a null value to the array
                                 }
                                 shiftedChartData1Values = [...temlist, ...chartData1Values];  // Assign outside the block

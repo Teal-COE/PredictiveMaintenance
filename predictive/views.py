@@ -33,6 +33,91 @@ def get_folders_in_directory(directory_path):
     return [f for f in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, f))]
 
 def ajax_predictive_screen(request):
+
+    if request.method == 'POST':
+        # sensor_name =
+        # start_datetime = request.POST.get('start_datetime')
+        # end_datetime = request.POST.get('end_datetime')
+        # number_predications = request.POST.get('number_predications')
+        # additional_feature = request.POST.get('additionalFeature') == 'true'
+
+        params = {
+            'element_id' :  request.POST.get('sensor_name') ,
+            'no_of_prediction' : request.POST.get('number_predications') ,
+            'with_actual' : request.POST.get('additionalFeature') ,
+        }
+
+
+
+        model_data = SettingsElement.objects.filter(element_id=params['element_id']).values('model_path')
+        for file in os.listdir(model_data[0]['model_path']):
+            if file.find('.h5') != -1:
+                path = model_data[0]['model_path']
+                match = re.search(r'-(\d+)\.', file)
+                sequence_length = int(match.group(1))
+                if match:
+                    hour_labeled = SensorDataLog.objects.filter(element_id=params['element_id']).annotate(time=TruncHour('timestamp')).values('time').annotate(value=Max('max')).values('time','value').order_by('-timestamp')[:sequence_length * 3]
+                    inputs = [float(object['value']) for object in hour_labeled]
+                    time_stamps = [str(object['time']) for object in hour_labeled]
+
+                    if params['with_actual'] == 'true':  # for faj
+                        print("with actual data is True")
+                        input_set = inputs[-sequence_length - int(params['no_of_prediction']):-int(params['no_of_prediction'])]
+                        time_stamps_set = time_stamps[-sequence_length - int(params['no_of_prediction']):-int(params['no_of_prediction'])]
+
+                        res, msg = predictor(input_set, path, sequence_length,no_of_pred=int(params['no_of_prediction']),result=True)
+                        print(msg , "--------------------------------msg------------")
+                        print(time_stamps_set , "--------------------------------time_stamp------------")
+                        predictions = []
+                        for id ,pred in enumerate(msg):
+                            predictions.append({ 'time' : time_stamps_set[id] , 'value': pred })
+
+                        predictions.insert(0, list(hour_labeled)[0])
+                        print(predictions , "----------------------------pred")
+                        if res:
+                            final_res = {
+                                "success": True,
+                                "data": {
+                                    "actual_data": list(hour_labeled)[::-1],
+                                    "predictions": predictions ,
+                                    "is_actual": params['with_actual']
+                            }
+                            }
+                            return JsonResponse(final_res, safe=False)
+                        else:
+                            return JsonResponse({'message': msg}, safe=False)
+
+                    else:
+                        print("with actual data is False")
+                        input_set = inputs[-sequence_length:]
+                        timestamp_set = time_stamps[-sequence_length:]
+
+                        res, msg = predictor(input_set, path, sequence_length,
+                                             no_of_pred=int(params['no_of_prediction']), result=True)
+
+                        predictions = [{'time': 'hour' + str(id + 1), 'value': i} for id, i in enumerate(msg)]
+
+                        predictions.insert(0 , list(hour_labeled)[0] )
+
+                        if res:
+                            final_res = {
+                                "success": True,
+                                "data": {
+                                    "actual_data": list(hour_labeled)[::-1],
+                                    "predictions": predictions},
+                                "is_actual": params['with_actual']
+                            }
+                            return JsonResponse(final_res, safe=False)
+                        else:
+                            return JsonResponse({'message': msg}, safe=False)
+
+                else:
+                    return JsonResponse({'message': "Couldn't find the seq len in  model name"}, safe=False)
+
+            return JsonResponse({"message": 'Model not found in the given path'}, safe=False)
+
+
+def ajax_predictive_screen1(request):
     """
     Handles POST requests to filter and return data based on the provided
     sensor name and date range (start_datetime and end_datetime).
@@ -44,10 +129,9 @@ def ajax_predictive_screen(request):
         end_datetime = request.POST.get('end_datetime')
         number_predications = request.POST.get('number_predications')
         additional_feature = request.POST.get('additionalFeature') == 'true'
-        
 
-        print(sensor_name, start_datetime, end_datetime,number_predications , additional_feature, 'number_predications')
-       
+        print(sensor_name, start_datetime, end_datetime, number_predications, additional_feature, 'number_predications')
+
         path = f'predictive.json'
         try:
             data = json.loads(open(path).read())
@@ -510,10 +594,10 @@ def anomaly_check(sender, instance, created, **kwargs):
                 f"Alert - Anomaly ---- HL {limits[0]['upper_anamoly_limit']} , LL {limits[0]['lower_anamoly_limit']} , Value {instance.max}")
             data = {
                 'sensor_name': limits[0]['element_name'],
-                'ranges': f"{limits[0]['upper_anamoly_limit']} - {limits[0]['upper_anamoly_limit']}",
+                'ranges': f"{limits[0]['upper_anamoly_limit']} - {limits[0]['lower_anamoly_limit']}",
                 'actual': instance.max
             }
-            print(alert_anamoly([ 'faj@titan.co.in', 'tamilmozhi.mj@titan.co.in'], data))
+            print(alert_anamoly([ 'faj@titan.co.in',  'akashadi@titan.co.in'], data))
 
 
 @receiver(post_save, sender=SettingsElement)
@@ -577,15 +661,15 @@ def alert_anamoly(recipient_list, table_data):
     <html>
     <head>
       <meta charset="UTF-8">
-      <title>Welcome Email</title>
+      <title>Alert Email</title>
     </head>
     <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #dddddd;">
         <div style="background-color:  #FFFF00; color: black; padding: 20px; text-align: center;">
-          <h1 style="margin: 0;">Alert for Anamoly in Injector Line!</h1>
+          <h1 style="margin: 0;">Alert | Anamoly in Injector Line!</h1>
         </div>
         <div style="padding: 20px;">
-          <p>Following are the list of anomalies found 2025-Jan-05 4:26 PM</p>
+          <p>Following are the list of anomalies found {datetime.now()}</p>
           <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
             <thead>
               <tr>
@@ -639,7 +723,7 @@ def test_function(requests):
     <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #dddddd;">
         <div style="background-color:  #FFFF00; color: black; padding: 20px; text-align: center;">
-          <h1 style="margin: 0;">Alert for Anamoly in Injector Line!</h1>
+          <h1 style="margin: 0;">Alert | Anamoly in Injector Line!</h1>
         </div>
         <div style="padding: 20px;">
           <p>Following are the list of anomiles found 2025-Jan-05 4:26 PM</p>
@@ -693,8 +777,6 @@ def prediction(requests):
                     inputs = SensorDataLog.objects.filter(element_id = params['element_id']).values('timestamp' , 'max') .order_by('-timestamp')[:sequence_length*1000]
 
                     return JsonResponse(list(inputs), safe=False)
-
-
 
                     res, msg = predictor(requests.data['data'], path,sequence_length ,
                                          no_of_pred=int(requests.data['no_of_prediction']), result=True)
@@ -779,3 +861,5 @@ def delete_all_records(request, sensor_id):
         return JsonResponse({"status": "deleteed"}, safe=False)
     except Exception as e:
         return JsonResponse({"status": e}, safe=False)
+
+

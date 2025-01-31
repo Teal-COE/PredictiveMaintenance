@@ -1,13 +1,11 @@
 
-print( [ i* 0.25 for i in range(10, 10 + 12)])
 
 
 
 a = [2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75, 5.0, 5.25]
+b = [1,2,3,4,5,6,7,8,9,10,11,12]
+l = []
+for id , key in enumerate(b):
+    l.append({ key : a[id] })
 
-
-a.pop(0)
-
-a.append(1)
-
-print(a)
+print(l[::-1])
