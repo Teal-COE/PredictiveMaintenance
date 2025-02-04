@@ -32,22 +32,15 @@ ANOMALY_VARIABLES = {}
 def get_folders_in_directory(directory_path):
     return [f for f in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, f))]
 
-def ajax_predictive_screen(request):
 
+def prediction(request):
     if request.method == 'POST':
-        # sensor_name =
-        # start_datetime = request.POST.get('start_datetime')
-        # end_datetime = request.POST.get('end_datetime')
-        # number_predications = request.POST.get('number_predications')
-        # additional_feature = request.POST.get('additionalFeature') == 'true'
 
         params = {
-            'element_id' :  request.POST.get('sensor_name') ,
-            'no_of_prediction' : request.POST.get('number_predications') ,
-            'with_actual' : request.POST.get('additionalFeature') ,
+            'element_id': request.POST.get('sensor_name'),
+            'no_of_prediction': request.POST.get('number_predications'),
+            'with_actual': request.POST.get('additionalFeature'),
         }
-
-
 
         model_data = SettingsElement.objects.filter(element_id=params['element_id']).values('model_path')
         for file in os.listdir(model_data[0]['model_path']):
@@ -56,32 +49,38 @@ def ajax_predictive_screen(request):
                 match = re.search(r'-(\d+)\.', file)
                 sequence_length = int(match.group(1))
                 if match:
-                    hour_labeled = SensorDataLog.objects.filter(element_id=params['element_id']).annotate(time=TruncHour('timestamp')).values('time').annotate(value=Max('max')).values('time','value').order_by('-timestamp')[:sequence_length * 3]
+                    hour_labeled = SensorDataLog.objects.filter(element_id=params['element_id']).annotate(
+                        time=TruncHour('timestamp')).values('time').annotate(value=Max('max')).values('time',
+                                                                                                      'value').order_by(
+                        '-timestamp')[:sequence_length * 3]
                     inputs = [float(object['value']) for object in hour_labeled]
                     time_stamps = [str(object['time']) for object in hour_labeled]
 
-                    if params['with_actual'] == 'true':  # for faj
+                    if params['with_actual'] == 'true':
                         print("with actual data is True")
-                        input_set = inputs[-sequence_length - int(params['no_of_prediction']):-int(params['no_of_prediction'])]
-                        time_stamps_set = time_stamps[-sequence_length - int(params['no_of_prediction']):-int(params['no_of_prediction'])]
+                        input_set = inputs[
+                                    -sequence_length - int(params['no_of_prediction']):-int(params['no_of_prediction'])]
+                        time_stamps_set = time_stamps[-sequence_length - int(params['no_of_prediction']):-int(
+                            params['no_of_prediction'])]
 
-                        res, msg = predictor(input_set, path, sequence_length,no_of_pred=int(params['no_of_prediction']),result=True)
-                        print(msg , "--------------------------------msg------------")
-                        print(time_stamps_set , "--------------------------------time_stamp------------")
+                        res, msg = predictor(input_set, path, sequence_length,
+                                             no_of_pred=int(params['no_of_prediction']), result=True)
+                        print(msg, "--------------------------------msg------------")
+                        print(time_stamps_set, "--------------------------------time_stamp------------")
                         predictions = []
-                        for id ,pred in enumerate(msg):
-                            predictions.append({ 'time' : time_stamps_set[id] , 'value': pred })
+                        for id, pred in enumerate(msg):
+                            predictions.append({'time': time_stamps_set[id], 'value': pred})
 
-                        predictions.insert(0, list(hour_labeled)[0])
-                        print(predictions , "----------------------------pred")
+                        predictions.insert(0, list(hour_labeled)[int(params['no_of_prediction'])])
+                        print(predictions, "----------------------------pred")
                         if res:
                             final_res = {
                                 "success": True,
                                 "data": {
                                     "actual_data": list(hour_labeled)[::-1],
-                                    "predictions": predictions ,
+                                    "predictions": predictions,
                                     "is_actual": params['with_actual']
-                            }
+                                }
                             }
                             return JsonResponse(final_res, safe=False)
                         else:
@@ -97,7 +96,7 @@ def ajax_predictive_screen(request):
 
                         predictions = [{'time': 'hour' + str(id + 1), 'value': i} for id, i in enumerate(msg)]
 
-                        predictions.insert(0 , list(hour_labeled)[0] )
+                        predictions.insert(0, list(hour_labeled)[0])
 
                         if res:
                             final_res = {
@@ -155,6 +154,7 @@ def predictive_screen(request):
     # sensors = SettingsElement.objects.all().order_by('-element_id')
     sensors = SettingsElement.objects.values('element_id', 'element_name').order_by('-element_id')
     return render(request, 'predictive_screen.html', {'sensors': sensors})
+
 
 def model_evaluation(request):
     if request.method == 'POST':
@@ -492,7 +492,8 @@ def datalog(request):
 @api_view(['POST'])
 # @permission_classes([permissions.IsAuthenticated])
 def get_pred_sensor_list(request):
-    sensor_list = SettingsElement.objects.filter(prediction=True, active=True).values('element_id' , 'model_path' , 'org_id')
+    sensor_list = SettingsElement.objects.filter(prediction=True, active=True).values('element_id', 'model_path',
+                                                                                      'org_id')
     sensor = list(sensor_list)
     return JsonResponse(sensor, safe=False)
 
@@ -586,18 +587,21 @@ def anomaly_check(sender, instance, created, **kwargs):
     limits = SettingsElement.objects.filter(element_id=instance.element_id).values('element_id', 'element_name',
                                                                                    'upper_anamoly_limit',
                                                                                    'lower_anamoly_limit')
+    try:
 
-    if not limits[0]['upper_anamoly_limit'] == 'model not created':
-        if not float(limits[0]['lower_anamoly_limit']) <= float(instance.max) <= float(
-                limits[0]['upper_anamoly_limit']):
-            print(
-                f"Alert - Anomaly ---- HL {limits[0]['upper_anamoly_limit']} , LL {limits[0]['lower_anamoly_limit']} , Value {instance.max}")
-            data = {
-                'sensor_name': limits[0]['element_name'],
-                'ranges': f"{limits[0]['upper_anamoly_limit']} - {limits[0]['lower_anamoly_limit']}",
-                'actual': instance.max
-            }
-            print(alert_anamoly([ 'faj@titan.co.in',  'akashadi@titan.co.in'], data))
+        if not limits[0]['upper_anamoly_limit'] == 'model not created':
+            if not float(limits[0]['lower_anamoly_limit']) <= float(instance.max) <= float(
+                    limits[0]['upper_anamoly_limit']):
+                print(
+                    f"Alert - Anomaly ---- HL {limits[0]['upper_anamoly_limit']} , LL {limits[0]['lower_anamoly_limit']} , Value {instance.max}")
+                data = {
+                    'sensor_name': limits[0]['element_name'],
+                    'ranges': f"{limits[0]['upper_anamoly_limit']} - {limits[0]['lower_anamoly_limit']}",
+                    'actual': instance.max
+                }
+                print(alert_anamoly(['faj@titan.co.in', 'akashadi@titan.co.in'], data))
+    except Exception as e:
+        pass
 
 
 @receiver(post_save, sender=SettingsElement)
@@ -761,8 +765,9 @@ def test_function(requests):
     except Exception as E:
         return JsonResponse({"status": E}, safe=False)
 
+
 @api_view(['POST'])
-def prediction(requests):
+def prediction1(requests):
     params = requests.data
     element_list = SettingsElement.objects.filter(prediction='True').values('element_id')
     if params['element_id'] in [element['element_id'] for element in list(element_list)]:
@@ -774,11 +779,13 @@ def prediction(requests):
                 sequence_length = int(match.group(1))
                 if match:
 
-                    inputs = SensorDataLog.objects.filter(element_id = params['element_id']).values('timestamp' , 'max') .order_by('-timestamp')[:sequence_length*1000]
+                    inputs = SensorDataLog.objects.filter(element_id=params['element_id']).values('timestamp',
+                                                                                                  'max').order_by(
+                        '-timestamp')[:sequence_length * 1000]
 
                     return JsonResponse(list(inputs), safe=False)
 
-                    res, msg = predictor(requests.data['data'], path,sequence_length ,
+                    res, msg = predictor(requests.data['data'], path, sequence_length,
                                          no_of_pred=int(requests.data['no_of_prediction']), result=True)
                     if res:
                         return JsonResponse({"prediction": msg}, safe=False)
@@ -861,5 +868,3 @@ def delete_all_records(request, sensor_id):
         return JsonResponse({"status": "deleteed"}, safe=False)
     except Exception as e:
         return JsonResponse({"status": e}, safe=False)
-
-

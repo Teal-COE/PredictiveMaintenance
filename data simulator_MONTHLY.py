@@ -2,7 +2,7 @@ import random
 
 import requests
 
-url = 'http://192.168.8.170:9001/predictive/datalog/'
+url = 'http://192.168.8.135:9001/predictive/datalog/'
 
 
 def get_random_data():
@@ -18,11 +18,11 @@ def get_random_data():
 
 value = 0.0
 
-for date in range(1, 28):
+for date in range(1, 31):
          for hour in range(23):
-            value = value+0.5
+            value = value+1.5
             data = {
-                "element_id": "AZD",
+                "element_id": "SP1",
                 "max": value,
                 "min": random.randint(13, 15),
                 "avg": random.randint(16, 21),
