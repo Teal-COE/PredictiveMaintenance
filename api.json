@@ -1,0 +1,13 @@
+{
+ "url" :  "http://192.168.19.119:9001/predictive/error_log/" ,
+
+ "resp" :  {
+
+"service" : "DataLog" ,
+"error_category" : "File Handling" ,
+"error_text" : "Brain is not Braining",
+"severity" : 5,
+"timestamp" : "2025-01-01 11:15:00"
+},
+ "name": ""
+}

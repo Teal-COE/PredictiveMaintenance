@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}Predictive Maintenance {% endblock %}
+
+{% block content %}
+<div class="container-fluid"><div class="d-flex justify-content-between align-items-center">
+    <h1 class="mt-4">Model Analysis</h1>
+    <a href="/new-page-url" class="btn btn-success">Add</a>
+</div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="post" id="ModelDataForm">
+                {% csrf_token %}
+                <div class="row align-items-end">
+                    <!-- Sensor Name Dropdown -->
+                   <div class="col-md-3">
+    <label for="element_id" class="form-label">Select Element</label>
+    <select id="element_id" name="element_name" class="form-control" required>
+        <option value="">Select an Element</option>
+        {% for sensor in sensors %}
+        <option value="{{ sensor.element_id }}">{{ sensor.element_name }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+<!-- Loss Function Dropdown -->
+<div class="col-md-3">
+    <label for="loss_function" class="form-label">Select Type</label>
+    <select id="loss_function" name="loss_function" class="form-control" required>
+        <option value="loss">Loss</option>
+        <option value="accuracy">Accuracy</option>
+    </select>
+</div>
+
+<div class="col-md-3">
+    <label for="model" class="form-label">Model</label>
+    <select id="model" name="model" class="form-control" required>
+        <option value="">Select Model</option>
+        <!-- Models will be populated dynamically via AJAX -->
+    </select>
+</div>
+
+                    <!-- Submit Button -->
+                    <div class="col-md-3 text-end">
+                        <button type="submit" class="btn btn-primary w-80" id="getDataButton">Submit</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Chart Container (hidden initially) -->
+            <div class="chart-container" id="chartContainer" style="display: none;">
+                <!-- Changed from <svg> to <canvas> -->
+                <canvas id="chart" width="700" height="400"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    $(document).ready(function() {
+
+        $('#getDataButton').click(function(event) {
+            event.preventDefault();  // Prevent the form from submitting normally
+
+
+            var elementName = $('#element_id').val();  // Correct ID: element_id
+            var lossFunction = $('#loss_function').val();  // Correct ID: loss_function
+            var model_path =   $('#model').val();
+            var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();  // CSRF token
+
+
+            // Make the AJAX request
+            $.ajax({
+                url: '{% url "model_evaluation" %}',  // The URL of your Django view
+                type: 'POST',
+                data: {
+                    element_name: elementName,
+                    loss_function: lossFunction,
+                    model_path : model_path ,
+                    csrfmiddlewaretoken: csrfToken  // CSRF token for security
+                },
+                success: function(response) {
+                    console.log("Response:", response);  // Log the response for debugging
+
+                    if (response && response.labels && response.data) {
+                        // Get the context from the <canvas> element (correct usage)
+                        var ctx = document.getElementById('chart').getContext('2d');  // Correct ID: chart
+                        var chart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: response.labels,  // Labels from the backend
+                                datasets: [{
+                                    label: response.title,
+                                    data: response.data,  // Data from the backend
+                                    borderColor: 'rgba(75, 192, 192, 1)',
+                                    fill: false
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false
+                            }
+                        });
+
+                        // Show the chart container after data is successfully fetched
+                        $('#chartContainer').show();
+                    } else {
+                        console.error("Error: Invalid data received", response);
+                    }
+                },
+                error: function(error) {
+                    console.error("Error fetching chart data:", error);
+                }
+            });
+        });
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        // When the element is selected
+        $('#element_id').change(function() {
+            var element_id = $(this).val(); // Get the selected element ID
+
+            if (element_id) {
+                // Make AJAX request to get models for the selected element
+                $.ajax({
+                    url: '{% url "get_models" %}',  // The Django view URL that will handle this request
+                    type: 'GET',
+                    data: {
+                        'element_id': element_id  // Pass the selected element_id
+                    },
+                    success: function(response) {
+                        // Clear the current options in the model dropdown
+                        $('#model').empty().append('<option value="">Select Model</option>');
+
+                        // Populate the model dropdown with the response data (model IDs)
+                        if (response.models && response.models.length > 0) {
+                            $.each(response.models, function(index, model_id) {
+                                $('#model').append('<option value="' + model_id + '">' + model_id + '</option>');
+                            });
+                        } else {
+                            // If no models are found, show a message
+                            $('#model').append('<option value="">No models available</option>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log("Error fetching models:", error);
+                        // Show an error message in case of failure
+                        $('#model').empty().append('<option value="">Error loading models</option>');
+                    }
+                });
+            } else {
+                // If no element is selected, clear the model dropdown
+                $('#model').empty().append('<option value="">Select Model</option>');
+            }
+        });
+    });
+</script>
+{% endblock %}
