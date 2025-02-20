@@ -17,13 +17,15 @@ import shutil
 
 def anamoly_limits(data, multiplier=1.5):
     try:
+        multiplier = float(multiplier)
+        print(multiplier  ," Anamoly multiplier")
         data = sorted(data)
         print(data)
         q1 = np.percentile(data, 25)
         q3 = np.percentile(data, 75)
         iqr = q3 - q1
-        lower_bound = q1 - 1.5 * iqr
-        upper_bound = q3 + 1.5 * iqr
+        lower_bound = q1 - multiplier * iqr
+        upper_bound = q3 + multiplier * iqr
         print(lower_bound, upper_bound)
         return {
             'status': True,
@@ -43,7 +45,7 @@ def predictor(prediction_data, path, sequence_length, no_of_pred=1, result=False
     model_path = ''
     scaler_path = ''
     predictions = []
-    maximum_prediction = 10
+    maximum_prediction = 100
     if os.path.exists(path):
         print(path)
         for file in os.listdir(path):

@@ -3,6 +3,10 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 # Create your models here.
+def org_details():
+    org_data = list(SettingsOrg.objects.all().values('org_id', 'line_code', 'plant_code'))
+    return [(id['org_id'], str(id['plant_code']) + " | " + str(id['line_code'])) for id in org_data]
+
 
 class SensorDataLog(models.Model):
     id = models.AutoField(primary_key=True)
@@ -31,18 +35,22 @@ class SettingsOrg(models.Model):
 
 
 class SettingsElement(models.Model):
+
+
+
     element_id = models.CharField(max_length=255, null=False)
     element_name = models.CharField(max_length=255, null=False)
     tag = models.CharField(max_length=255, null=False)
     server_ip = models.CharField(max_length=255, null=False)
     machine_code = models.CharField(max_length=255, null=False)
     element_type = models.CharField(max_length=255, null=False)
-    model_path = models.CharField(max_length=255, default= 'model not created')
-    upper_anamoly_limit = models.CharField(max_length=255, default= 'model not created')
-    lower_anamoly_limit = models.CharField(max_length=255, default= 'model not created')
+    model_path = models.CharField(max_length=255, default='model not created')
+    upper_anamoly_limit = models.CharField(max_length=255, default='model not created')
+    lower_anamoly_limit = models.CharField(max_length=255, default='model not created')
+    aggregation_type = models.CharField(max_length=255, default='model not created')
     rec_train_data = models.BooleanField(default=False)
     remarks = models.TextField()
-    org_id = models.CharField(max_length=255, null=False)
+    org_id = models.CharField(max_length=255, null=False  )
     active = models.BooleanField(default=True)
     prediction = models.BooleanField(default=False)
 
@@ -55,7 +63,8 @@ class ErrorLog(models.Model):
     service = models.CharField(max_length=255, null=False)
     error_category = models.CharField(max_length=255, null=False)
     error_text = models.TextField()
-    severity = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)],help_text="severity must be between 1 to 10 ( integer ) ")
+    severity = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)],
+                                   help_text="severity must be between 1 to 10 ( integer ) ")
     timestamp = models.DateTimeField()
 
     def __str__(self):
@@ -72,3 +81,39 @@ class ModelLog(models.Model):
 
     def __str__(self):
         return f"{self.id}-{self.start_time} - {self.model_created} - {self.log_time}"
+
+
+class AnomalyDataLog(models.Model):
+    id = models.AutoField(primary_key=True)
+    element_id = models.CharField(max_length=255, null=False)
+    element_name = models.CharField(max_length=255, null=False)
+    current_value = models.DecimalField(max_digits=8, decimal_places=4)
+    aggregation_type = models.CharField(max_length=255, null=False)
+    no_of_records = models.CharField(max_length=255, null=False)
+    anomaly_ranges = models.CharField(max_length=255, null=False)
+    machine = models.CharField(max_length=255, null=False)
+    org_id = models.CharField(max_length=255, null=False)
+    time_stamp = models.CharField(max_length=255, null=False)
+    new_anamoly = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.id}-{self.element_name} - {self.time_stamp} - {self.org_id}"
+
+
+class SettingsEmailRecipients(models.Model):
+    recipient_options = [
+        ('1' , 'To'),
+        ('2' ,'CC'),
+        ('3' ,'Bcc'),
+    ]
+
+
+    id = models.AutoField(primary_key=True),
+    name = models.CharField(max_length=255, null=False)
+    email = models.EmailField(max_length=255, null=False)
+    org_id = models.IntegerField(choices=org_details )
+    recipient_type = models.CharField(max_length=255,choices=recipient_options , default= 'To')
+    status = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.id}-{self.email} - {self.recipient_type} - {self.org_id}"

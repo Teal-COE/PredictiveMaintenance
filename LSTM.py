@@ -15,7 +15,7 @@ import json
 import shutil
 
 
-def anamoly_limits(data, multiplier=1.5):
+def anamoly_limits(data, multiplier=3):
     try:
         data = sorted(data)
         q1 = np.percentile(data, 25)

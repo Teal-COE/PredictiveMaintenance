@@ -20,16 +20,10 @@ from django.urls import path, include
 from predictive import views as pred
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-
 urlpatterns = [
     path('predictive_screen/', pred.predictive_screen, name='predictive_screen'),
-    path('ajax_predictive_screen/', pred.ajax_predictive_screen, name='ajax_predictive_screen-data'),
-
-
+    path('run_predictions/', pred.run_predictions, name='ajax_predictive_screen-data'),
     path('training_screen/', pred.training_screen, name='training_screen'),
-    # path('ajax_sensor-data/', pred.ajax_success_view1, name='ajax_sensor-data'),
-    path('start_training/', pred.start_training, name='start_training'),
-
     path('model_analysis/', pred.model_analysis, name='model_analysis'),
     path('get_models/', pred.get_models, name='get_models'),
     path('model_analysis_chart/', pred.model_evaluation, name='model_evaluation'),
@@ -40,11 +34,12 @@ urlpatterns = [
     path('datalog_sensor/', pred.datalog_sensor_list),
     path('error_log/', pred.error_log),
     path('test/', pred.test_function),
-    path('train_model/', pred.train_model , name = 'train_model'),
-    path('hourly_data/', pred.element_raw_data_hourly_api , name = 'ajax_sensor-data'),
-    path('predict/', pred.prediction),
+    path('train_model/', pred.train_model, name='train_model'),
+    path('data/', pred.element_raw_data, name='ajax_sensor_data'),
+    path('predict/', pred.run_predictions),
     path('delete_all/<str:sensor_id>', pred.delete_all_records),
-    # path('anomaly/', pred.anamolay_detector),
+    path('anamoly_records/', pred.refresh_anomalies),
+    path('alert/', pred.email_anamoly_alert),
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
