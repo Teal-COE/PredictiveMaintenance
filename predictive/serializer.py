@@ -18,3 +18,9 @@ class SettingsElementSerializer(serializers.ModelSerializer):
     class Meta:
         model = SettingsElement
         fields = '__all_'
+
+class AnomalyDataLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnomalyDataLog
+        exclude = ['id']
+

@@ -2,7 +2,7 @@ import random
 
 import requests
 
-url = 'http://192.168.8.170:9001/predictive/datalog/'
+url = 'http://192.168.119.1:9001/predictive/datalog/'
 
 
 def get_random_data():
@@ -18,17 +18,17 @@ def get_random_data():
 
 value = 0.0
 
-for date in range(1, 28):
+for date in range(1, 8):
          for hour in range(23):
-            value = value+0.5
+            value = value+1.5
             data = {
-                "element_id": "AZD",
+                "element_id": "inc1",
                 "max": value,
                 "min": random.randint(13, 15),
                 "avg": random.randint(16, 21),
                 "no_of_records": "60",
-                "timestamp": f"2025-01-{f'{date:02}'} {f'{hour:02}'}:19:19.000",
-                "org_id": "19"}
+                "timestamp": f"2025-02-{f'{date:02}'} {f'{hour:02}'}:10:19.000",
+                "org_id": "5"}
             req = requests.post(url, data)
             if req.status_code == 201:
                 print(f"2024-12-{date} {hour}:{19}:19.000"  , value)
