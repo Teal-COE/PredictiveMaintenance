@@ -3,3 +3,7 @@ env/
 *.pyc
 
 __pycache__/
+
+all_models
+
+db.sqlite3
