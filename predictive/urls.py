@@ -21,9 +21,10 @@ from predictive import views as pred
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
+    path('login_screen/',pred.login_screen ,name='login_screen'),
     path('predictive_screen/', pred.predictive_screen, name='predictive_screen'),
     path('run_predictions/', pred.run_predictions, name='ajax_predictive_screen-data'),
-    path('training_screen/', pred.training_screen, name='training_screen'),
+    path('login_screen/training_screen/', pred.training_screen, name='training_screen'),
     path('model_analysis/', pred.model_analysis, name='model_analysis'),
     path('get_models/', pred.get_models, name='get_models'),
     path('model_analysis_chart/', pred.model_evaluation, name='model_evaluation'),
@@ -35,7 +36,7 @@ urlpatterns = [
     path('error_log/', pred.error_log),
     path('test/', pred.test_function),
     path('train_model/', pred.train_model, name='train_model'),
-    path('data/', pred.element_raw_data, name='ajax_sensor-data'),
+    path('data/', pred.element_raw_data, name='ajax_sensor_data'),
     path('predict/', pred.run_predictions),
     path('delete_all/<str:sensor_id>', pred.delete_all_records),
     path('anamoly_records/', pred.refresh_anomalies),

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}
+    Predictive Maintenance
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4"></h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Sensor Data Input</h5>
+
+            <form method="post" id="sensorDataForm">
+                {% csrf_token %}
+                <div class="row align-items-end">
+                    <div class="col-md-3">
+                        <label for="sensorName" class="form-label">Sensor Name</label>
+                        <select id="sensorName" name="sensor_name" class="form-control" required>
+                            <option value="">Select a Sensor</option>
+                            {% for sensor in sensors %}
+                                <option value="{{ sensor.element_id }}">{{ sensor.element_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="numberofpredications" class="form-label">Number of Predictions</label>
+                        <input type="number" class="form-control" id="numberofpredications" name="numberofpredications" min="1", max="23" required>
+                    </div>
+            
+                    <!-- Added Checkbox Section -->
+                    <div class="col-md-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="additionalFeature" name="additional_feature">
+                            <label class="form-check-label" for="additionalFeature">show actual data</label>
+                        </div>
+                    </div>
+            
+                    <!-- Aligning the Submit Button to the Right -->
+                    <div class="col-md-3 text-end">
+                        <button type="submit" class="btn btn-primary" id="getDataButton">Submit</button>
+                    </div>
+                    
+                </div>
+            </form>
+            
+            <!-- Chart Container (hidden initially) -->
+            <div class="chart-container" id="chartContainer" style="display: none;">
+                <canvas id="chart" width="800" height="600"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+    $(document).ready(function () {
+        $('#sensorDataForm').on('submit', function (event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            // Collect form data
+            var additionalFeature = $('#additionalFeature').prop('checked');
+            var numberofpredications = $('#numberofpredications').val();
+        //    var startDatetime = $('#startDatetime').val();
+        //    var endDatetime = $('#endDatetime').val();
+            var sensorName = $('#sensorName').val();
+
+            // Show loading spinner or disable the button
+            $('#responseMessage').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+            $('#getDataButton').prop('disabled', true);
+
+            // Validate inputs (optional)
+            if (!sensorName || !numberofpredications) {
+                $('#responseMessage').html('Please fill out all fields.');
+                $('#getDataButton').prop('disabled', false);
+                return;
+            }
+
+            // AJAX request
+            $.ajax({
+                url: '/predictive/run_predictions/',  // URL of the Django view
+                type: 'POST',
+                data: {
+                    sensor_name: sensorName,
+                  //  start_datetime: startDatetime,
+                  //  end_datetime: endDatetime,
+                    number_predications: numberofpredications,
+                    additionalFeature: additionalFeature,
+                    csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val() // CSRF token for security
+                },
+                success: function (response) {
+                    // Handle success response
+                    $('#getDataButton').prop('disabled', false);
+
+                    if (response.success) {
+                        $('#chartContainer').show();
+
+                        var ctx = document.getElementById('chart').getContext('2d');
+
+                        const chartDataLabels = response.data.actual_data.map(data => data.time);
+                        const chartDataValues = response.data.actual_data.map(data => data.value);
+                        const with_actual = response.data.is_actual;
+
+                        console.log(with_actual)
+
+                        const chartData1Labels = response.data.predictions.map(data => data.time);
+                        const chartData1Values = response.data.predictions.map(data => data.value);
+
+                        const temlist = [];
+                        
+                        let shiftedChartData1Values = [];  // Declare outside of if block
+
+                            // Adjust the shift logic based on condition (you can replace 'true' with your actual condition)
+                            if(with_actual){
+                                for (let i = 0; i < (response.data.actual_data.length - response.data.predictions.length); i++) {
+                                    temlist.push(null); // Adds a null value to the array
+                                }
+                                shiftedChartData1Values = [...temlist, ...chartData1Values];  // Assign outside the block
+                            } else {
+                                for (let i = 1; i < response.data.actual_data.length; i++) {
+                                    temlist.push(null); // Adds a null value to the array
+                                }
+                                shiftedChartData1Values = [...temlist, ...chartData1Values];  // Assign outside the block
+                            }
+            
+                        // To start the second graph from the middle, add null values at the beginning of chartData1
+                        // const shiftedChartData1Values = [...temlist, ...chartData1Values];
+
+                        // const shiftedChartData1Values = [...temlist, ...chartData1Values];
+
+                        const shiftedChartData1Labels = [chartDataLabels[chartDataLabels.length - 1], ...chartData1Labels];
+
+                        // Combine labels and values for the final chart
+                        const mergedLabels = [...chartDataLabels, ...shiftedChartData1Labels];
+                        const mergedValues = [...chartDataValues, ...shiftedChartData1Values];
+
+                        const uniqueMergedValues = [...new Set(mergedLabels)];
+
+                        var chart = new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: uniqueMergedValues,  // X-axis labels
+                                datasets: [
+                                    {
+                                        label: "Actual Data",
+                                        data: chartDataValues,
+                                        borderColor: 'rgba(75, 192, 192, 1)',
+                                        fill: false,
+                                    },
+                                    {
+                                        label: "Predictions",
+                                        data: shiftedChartData1Values,
+                                        borderColor: 'rgba(255, 99, 132, 1)',
+                                        fill: false,
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false
+                            }
+                        });
+                    } else {
+                        $('#responseMessage').html('<span class="text-danger">Error fetching data.</span>');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $('#getDataButton').prop('disabled', false);
+                    $('#responseMessage').html('<span class="text-danger">An error occurred while fetching data. Please try again.</span>');
+                    console.error('Error:', error);
+                    $('#chartContainer').hide(); // Hide chart on error
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,1 +1,105 @@
 https://github.com/Teal-COE/PredictiveMaintenance.git (fetch)
+
+
+
+
+
+
+
+
+
+
+
+
+
+chill chill
+
+192.168.20.207
+
+
+
+Config File	   \\?\D:\PredictiMach\PredictiveMaintenance\web.config
+
+
+
+  C:\Users\User\AppData\Local\Programs\Python\Python312\python.exe
+
+              C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\wfastcgi.py
+
+              application setting 
+              DJANGO_SETTINGS_MODULE = PredictiveMaintenance.settings
+              PYTHONPATH = D:\PredictiMach\PredictiveMaintenance
+              WSGI_HANDLER = PredictiveMaintenance.wsgi.application
+
+
+
+
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <system.webServer>
+
+    <handlers>
+            <remove name="PredictiveMaintenance" />
+      <add name="Python FastCGI" path="handler.fcgi" verb="*" modules="FastCgiModule" scriptProcessor="C:\Users\User\AppData\Local\Programs\Python\Python312\python.exe|C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\wfastcgi.py" resourceType="Unspecified" requireAccess="Script" />
+            <add name="PredictiveMaintenance" path="*" verb="*" modules="FastCgiModule" scriptProcessor="C:\Users\User\AppData\Local\Programs\Python\Python312\python.exe|C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\wfastcgi.py" resourceType="Unspecified" requireAccess="Script" />
+    </handlers>
+
+    <fastCgi>
+      <application fullPath="C:\Users\User\AppData\Local\Programs\Python\Python312\python.exe">
+        <environmentVariables>
+          <environmentVariable name="WSGI_HANDLER" value="AIMaintenance.wsgi.application" />
+          <environmentVariable name="PYTHONPATH" value="D:\PredictiMach\PredictiveMaintenance" />
+          <environmentVariable name="DJANGO_SETTINGS_MODULE" value="AIMaintenance.settings" />
+        </environmentVariables>
+      </application>
+    </fastCgi>
+
+    <defaultDocument>
+      <files>
+        <add value="handler.fcgi" />
+      </files>
+    </defaultDocument>
+
+  </system.webServer>
+</configuration>
+
+
+
+
+
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <appSettings>
+    <add key="WSGI_HANDLER" value="AIMaintenance.wsgi.application" />
+    <add key="PYTHONPATH" value="D:\PredictiMach\PredictiveMaintenance" />
+    <add key="DJANGO_SETTINGS_MODULE" value="AIMaintenance.settings" />
+  </appSettings>
+
+  <system.webServer>
+    <handlers>
+      <add name="Python FastCGI" path="*" verb="*" modules="FastCgiModule" 
+           scriptProcessor="C:\Users\User\AppData\Local\Programs\Python\Python312\python.exe|C:\Users\User\AppData\Local\Programs\Python\Python312\Lib\site-packages\wfastcgi.py" 
+           resourceType="Unspecified" requireAccess="Script" />
+    </handlers>
+
+    <security>
+      <requestFiltering allowDoubleEscaping="true" />
+    </security>
+
+    <httpErrors errorMode="Detailed" />
+    <asp scriptErrorSentToBrowser="true" />
+
+    <directoryBrowse enabled="false" />
+  </system.webServer>
+</configuration>
+
+
+
+python manage.py shell
+from predictive.models import SensorDataLog
+>>> daa = SensorDataLog.objects.all()
+>>> daa.delete()

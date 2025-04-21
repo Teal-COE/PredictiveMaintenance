@@ -26,7 +26,7 @@ warnings.filterwarnings("ignore")
 init(autoreset=True)
 
 login_creds = {"username": "admin", "password": "LastDance"}
-server_ip = "192.168.119.1:9001"
+server_ip = "192.168.1.100:9001"
 generate_token_url = f"http://{server_ip}/predictive/token/"
 get_plc_nos = f"http://{server_ip}/predictive/datalog_sensor/"
 error_log_url = f"http://{server_ip}/predictive/error_log/"

@@ -7,8 +7,7 @@
 
     <div class="card mb-4">
         <div class="card-body">
-            <h5 class="card-title">Sensor Data Input</h5>
-
+            <h5 class="card-title"style="font-size:30px">Training Screen</h5>
             <form method="post" id="sensorDataForm">
                 {% csrf_token %}
                 <div class="row align-items-end">
@@ -36,13 +35,14 @@
                     </div>
                 </div>
             </form>
+
 <!-- Modal HTML Structure -->
 <div class="modal fade" id="myModal" tabindex="-1" aria-labelledby="myModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="myModalLabel">Start Training</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
       </div>
       <div class="modal-body">
         <!-- Input fields for No of Epochs and No_of_steps -->
@@ -70,14 +70,15 @@
           </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-secondary"  id="modal" data-bs-dismiss="modal">Close</button>
         <button type="button" class="btn btn-primary" id="submitNumbers">Start Training</button>
       </div>
     </div>
   </div>
 </div>
            <div class="chart-container" id="chartContainer" style="display: none;">
-             <canvas id="chart" width="800" height="600"></canvas>
+
+             <canvas id="chart" width="800" height="440"></canvas>
            </div>
 
         </div>
@@ -87,91 +88,168 @@
 
 {% endblock %}{% block javascript %}
 
+<!-- Bootstrap JS Bundle (includes Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js"></script>
+<style>
+    /* Bouncing balls spinner CSS */
+    #loadingSpinner .bounce {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top:80px;
+
+    }
+
+    #loadingSpinner .bounce-ball {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #3498db;
+        margin: 0 5px;
+        animation: bounce 1.2s infinite ease-in-out;
+    }
+
+    #loadingSpinner .bounce-ball:nth-child(1) {
+        animation-delay: 0s;
+    }
+
+    #loadingSpinner .bounce-ball:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    #loadingSpinner .bounce-ball:nth-child(3) {
+        animation-delay: 0.2s;
+    }
+
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-15px);
+        }
+    }
+</style>
 <script>
     $(document).ready(function () {
-        $('#getDataButton').on('click', function (event) {
-            event.preventDefault(); // Prevent default form submission
+        // Custom validation method to ensure end_datetime is greater than start_datetime
+        $.validator.addMethod("greaterThanStart", function(value, element) {
+            var startDatetime = $('#startDatetime').val(); // Get the start datetime
+            return new Date(value) > new Date(startDatetime); // Compare end datetime with start datetime
+        }, "End datetime must be greater than start datetime.");
 
-            // Collect form data
-            var startDatetime = $('#startDatetime').val();
-            var endDatetime = $('#endDatetime').val();
-            var sensorName = $('#sensorName').val();
-
-            // Show loading spinner or disable the button
-            $('#responseMessage').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
-            $('#getDataButton').prop('disabled', true);
-
-            // Validate inputs (optional)
-            if (!sensorName || !startDatetime || !endDatetime) {
-                $('#responseMessage').html('Please fill out all fields.');
-                $('#getDataButton').prop('disabled', false);
-                return;
-            }
-
-            // AJAX request
-            $.ajax({
-                url: '/predictive/data/',  // URL of the Django view
-                type: 'POST',
-                data: {
-                    sensor_name: sensorName,
-                    start_datetime: startDatetime,
-                    end_datetime: endDatetime,
-                    csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val() // CSRF token for security
+        $("#sensorDataForm").validate({
+            errorClass: "error text-danger",  // Apply 'text-danger' class to error messages
+            errorElement: "label",  // Error messages will be placed in <label> tags
+            rules: {
+                sensor_name: {
+                    required: true,  // Ensure a sensor is selected
                 },
-                success: function (response) {
-                    // Enable the button
-                    $('#getDataButton').prop('disabled', false);
-
-                    if (response.success) {
-
-                        // Show chart container and render chart
-                        $('#chartContainer').show();
-                        $('#showPopupButton').show();
-
-                        var ctx = document.getElementById('chart').getContext('2d');
-
-                        const year = response.data.chartData.map(item => item.time);
-                        const value = response.data.chartData.map(item => parseFloat(item.value));
-
-                        console.log(year);
-                        console.log(value);
-
-                        var chart = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels:year,
-                                datasets: [{
-                                    label: "Training Data..",
-                                    data: value,
-                                    borderColor: 'rgba(75, 192, 192, 1)',
-                                    fill: false
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false
-                            }
-                        });
-
-                    } else {
-                        // Handle case when no data is found
-                        $('#responseMessage').html('<span class="text-warning">No data found for the selected range.</span>');
-                        $('#chartContainer').hide(); // Hide chart if no data
-                    }
+                start_datetime: {
+                    required: true,  // Ensure start datetime is provided
                 },
-                error: function (xhr, status, error) {
-                    // Enable the button
-                    $('#getDataButton').prop('disabled', false);
-
-                    // Show error message
-                    $('#responseMessage').html('<span class="text-danger">An error occurred while fetching data. Please try again.</span>');
-                    console.error('Error:', error);
-                    $('#chartContainer').hide(); // Hide chart on error
+                end_datetime: {
+                    required: true,  // Ensure end datetime is provided
+                    greaterThanStart: true 
                 }
-            });
+            },
+            messages: {
+                sensor_name: {
+                    required: "Please select a sensor."  // Custom message for Sensor Name
+                },
+                start_datetime: {
+                    required: "Start datetime is required."
+                },
+                end_datetime: {
+                    required: "End datetime is required.",
+                    greaterThanStart: "End datetime must be greater than start datetime." // Custom message
+                }
+            },
+            highlight: function (element) {
+                $(element).addClass('is-invalid').removeClass('is-valid');
+            },
+            unhighlight: function (element) {
+                $(element).removeClass('is-invalid').addClass('is-valid');
+            },
+            submitHandler: function (form, event) { // Include 'event' parameter
+                event.preventDefault(); // Prevent default form submission
+
+                // Collect form data
+                var sensorName = $('#sensorName').val(); 
+                var startDatetime = $('#startDatetime').val();
+                var endDatetime = $('#endDatetime').val();
+                var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
+
+                console.log(startDatetime, endDatetime, sensorName,'sensorName')
+
+                // Show loading spinner or disable the button
+                $('#responseMessage').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+                $('#getDataButton').prop('disabled', true);
+
+                // AJAX request
+                $.ajax({
+                    url: '{% url "ajax_sensor_data" %}',  // URL of the Django view
+                    type: 'POST',
+                    data: {
+                        sensor_name: sensorName,
+                        start_datetime: startDatetime,
+                        end_datetime: endDatetime,
+                        csrfmiddlewaretoken: csrfToken // CSRF token for security
+                    },
+                    success: function (response) {
+
+                        console.log(response, 'response')
+                        // Enable the button
+                        $('#getDataButton').prop('disabled', false);
+
+                        if (response.success) {
+                            // Show chart container and render chart
+                            $('#chartContainer').show();
+                            $('#showPopupButton').show();
+
+                            var ctx = document.getElementById('chart').getContext('2d');
+                            if (Chart.getChart(ctx)) {
+                                Chart.getChart(ctx).destroy();
+                            }
+
+                            const year = response.data.chartData.map(item => item.time);
+                            const value = response.data.chartData.map(item => parseFloat(item.value));
+
+                            var chart = new Chart(ctx, {
+                                type: 'line',
+                                data: {
+                                    labels: year,
+                                    datasets: [{
+                                        label: "Training Data",
+                                        data: value,
+                                        borderColor: 'rgba(75, 192, 192, 1)',
+                                        fill: false
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false
+                                }
+                            });
+
+                        } else {
+                            // Handle case when no data is found
+                            $('#responseMessage').html('<span class="text-warning">No data found for the selected range.</span>');
+                            $('#chartContainer').hide(); // Hide chart if no data
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // Enable the button
+                        $('#getDataButton').prop('disabled', false);
+                        $('#responseMessage').html('<span class="text-danger">An error occurred while fetching data. Please try again.</span>');
+                        console.error('Error:', error);
+                        $('#chartContainer').hide(); // Hide chart on error
+                    }
+                });
+            }
         });
-
-
 
         // Show the modal when the "Show Pop-Up" button is clicked
         $('#showPopupButton').on('click', function () {
@@ -180,13 +258,17 @@
 
         // Handle form submission inside the modal (Submit Numbers)
         $('#submitNumbers').on('click', function () {
-            // Get values of No_of_Epochs, No_of_steps, and anomaly_percentage from the input fields
             var sensor_name = $('#sensorName').val();
             var start_datetime = $('#startDatetime').val();
             var end_datetime = $('#endDatetime').val();
             var No_of_Epochs = parseFloat($('#No_of_Epochs').val());
             var No_of_steps = parseFloat($('#No_of_steps').val());
             var anomaly_percentage = parseFloat($('#anomaly_percentage').val());
+
+            
+            // var modalElement = document.getElementById('modal');
+            // var modal = bootstrap.Modal.getInstance(modalElement);
+            // modal.hide();
 
             // Validate if all fields are filled and contain valid numbers
             if (isNaN(No_of_Epochs) || isNaN(No_of_steps) || isNaN(anomaly_percentage)) {
@@ -199,45 +281,38 @@
             }
 
             // Show the loading spinner and disable the submit button
-            $('#loadingSpinner').show(); // Show the spinner
-            $('#submitNumbers').prop('disabled', true); // Disable the button to prevent multiple submissions
+            $('#loadingSpinner').show();
+            $('#submitNumbers').prop('disabled', true);
 
-            // Prepare data for AJAX
             var data = {
-                start_datetime:start_datetime,
-                end_datetime:end_datetime,
-                sensor_name:sensor_name,
+                start_datetime: start_datetime,
+                end_datetime: end_datetime,
+                sensor_name: sensor_name,
                 No_of_Epochs: No_of_Epochs,
                 No_of_steps: No_of_steps,
                 anomaly_percentage: anomaly_percentage,
-
                 csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val() // CSRF token for security
             };
 
             // AJAX request to send data to the Django view
             $.ajax({
-                url: '{% url "train_model" %}',   // Ensure this URL points to the correct Django view
+                url: '{% url "train_model" %}',  // Ensure this URL points to the correct Django view
                 type: 'POST',
                 data: data,
                 success: function (response) {
-                    // Hide the loading spinner after successful submission
                     $('#loadingSpinner').hide();
-                    $('#submitNumbers').prop('disabled', false); // Re-enable the button
-
-                    // Hide modal after successful submission
+                    $('#submitNumbers').prop('disabled', false);
                     $('#myModal').modal('hide');
 
-                    // Show SweetAlert success message
                     if (response.success) {
                         Swal.fire({
                             icon: 'success',
                             title: 'Success!',
                             text: ' Message: ' + response.message,
                             showCancelButton: true,
-                            confirmButtonText: 'Go to Dashboard',  // Button text for redirect
-                            cancelButtonText: 'Stay Here',  // Button text for staying on the current page
+                            confirmButtonText: 'Go to Dashboard',
+                            cancelButtonText: 'Stay Here',
                             preConfirm: () => {
-                                // This will trigger a page redirect when the user clicks the "Go to Dashboard" button
                                 window.location.href = '/predictive/predictive_screen/';  // Replace with the desired URL
                             }
                         });
@@ -250,9 +325,8 @@
                     }
                 },
                 error: function (xhr, status, error) {
-                    // Hide the loading spinner if an error occurs
                     $('#loadingSpinner').hide();
-                    $('#submitNumbers').prop('disabled', false); // Re-enable the button
+                    $('#submitNumbers').prop('disabled', false);
 
                     Swal.fire({
                         icon: 'error',
@@ -265,6 +339,5 @@
         });
     });
 </script>
-
 
 {% endblock %}

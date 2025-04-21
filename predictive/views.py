@@ -1,6 +1,6 @@
 import time, traceback
 import json, math
-from django.shortcuts import render
+from django.shortcuts import render,redirect
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -23,6 +23,8 @@ import shutil
 import regex as re
 from django.core.mail import send_mail
 from collections import defaultdict
+from django.contrib.auth import authenticate,login
+from django.contrib import messages
 
 MODEL_MAIN_PATH = 'all_models/'
 ANOMALY_VARIABLES = {}
@@ -31,7 +33,19 @@ HOUR_MODE = False
 
 def get_folders_in_directory(directory_path):
     return [f for f in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path, f))]
-
+def login_screen(request):
+    if request.method == 'POST':
+        username=request.POST.get('username')
+        password = request.POST.get('password')
+        user=authenticate(request,username=username,password=password)
+        if user is not None:
+            login(request, user)
+            return redirect('training_screen')
+        else:
+            messages.error(request, 'Invalid username or password')
+            return render(request, 'login.html', {'show_nav': False})
+    else:
+        return render(request, 'login.html', {'show_nav': False})
 
 
 @api_view(['POST'])
@@ -276,7 +290,7 @@ def predictive_screen(request):
     # sensors = SettingsElement.objects.all().order_by('-element_id')
     sensors = SettingsElement.objects.filter(prediction=True).values('element_id', 'element_name')
 
-    return render(request, 'predictive_screen.html', {'sensors': sensors})
+    return render(request, 'predictive_screen.html', {'sensors': sensors,'show_nav':True})
 
 
 def model_evaluation(request):
@@ -305,7 +319,7 @@ def model_evaluation(request):
 def training_screen(request):
     # sensors = SettingsElement.objects.values('element_id', 'element_name').order_by('-element_id')
     sensor_list = SettingsElement.objects.filter(prediction=True).values('element_id', 'element_name')
-    return render(request, 'training_screen.html', {'sensors': sensor_list})
+    return render(request, 'training_screen.html', {'sensors': sensor_list, 'show_nav':True})
 
 
 def get_models(request):
@@ -317,13 +331,14 @@ def get_models(request):
             return JsonResponse({'error': 'element_id is required'}, status=400)
 
         base_directory = os.getcwd()  # Gets the current working directory
+
         directory_path = os.path.join(base_directory, 'all_models', element_id)
 
         # Attempt to get the folders from the directory
         models_data = get_folders_in_directory(directory_path)
 
         # Return the models data as a JSON response
-        return JsonResponse({'models': models_data})
+        return JsonResponse({'models': models_data[::-1]})
 
     except FileNotFoundError:
         return JsonResponse({'error': f"Directory '{directory_path}' not found."}, status=404)
@@ -337,9 +352,7 @@ def get_models(request):
 
 def model_analysis(request):
     sensors = SettingsElement.objects.filter(prediction=True).order_by('-element_id')
-
-    return render(request, 'model_analysis.html', {'sensors': sensors})
-
+    return render(request, 'model_analysis.html', {'sensors': sensors, 'show_nav':True})
 
 #######################################################################################################################
 #################################################### end ##############################################################

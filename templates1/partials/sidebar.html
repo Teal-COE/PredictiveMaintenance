@@ -1,0 +1,61 @@
+<div id="layoutSidenav">
+    <!-- Sidebar Navigation -->
+    <div id="layoutSidenav_nav">
+        <nav class="sb-sidenav accordion" id="sidenavAccordion" style="background-color: #2C3E50; color: #ecf0f1;">
+            <div class="sb-sidenav-menu">
+                <div class="nav">
+                    <!-- Section Header -->
+                    <div class="sb-sidenav-menu-heading" style="color: #ecf0f1;">Training Screen</div>
+
+                    <!-- Training Screen Link (with updated icon) -->
+                    <a class="nav-link" href="{% url 'training_screen' %}" style="color: #ecf0f1;">
+                        <div class="sb-nav-link-icon" style="color: #ecf0f1;">
+                            <i class="fas fa-users"></i> <!-- Changed icon to "users" -->
+                        </div>
+                        Training Screen
+
+                    <!-- Model Analysis Link (with updated icon) -->
+                    <a class="nav-link" href="{% url 'model_analysis' %}" style="color: #ecf0f1;">
+                        <div class="sb-nav-link-icon" style="color: #ecf0f1;">
+                            <i class="fas fa-chart-line"></i> <!-- Changed icon to "chart-line" -->
+                        </div>
+                        Model Analysis
+                    </a>
+                        </a>
+
+
+                         <!-- Model Analysis Link (with updated icon) -->
+                    <a class="nav-link" href="{% url 'predictive_screen' %}" style="color: #ecf0f1;">
+                        <div class="sb-nav-link-icon" style="color: #ecf0f1;">
+                            <i class="fas fa-chart-line"></i> <!-- Changed icon to "chart-line" -->
+                        </div>
+                        Prediction Screen 
+                    </a>
+
+
+                      <a class="nav-link" href="/admin/predictive/settingselement/add/" style="color: #ecf0f1;" target="_blank">
+                        <div class="sb-nav-link-icon" style="color: #ecf0f1;">
+                            <i class="fas fa-users"></i> <!-- Changed icon to "users" -->
+                        </div>
+                        Add Sensor
+                    </a>
+
+                </div>
+            </div>
+            <!-- Sidebar Footer -->
+            <div class="sb-sidenav-footer" style="background-color: #34495E; color: #ecf0f1;">
+                <div class="small">Logged in as:</div>
+                Data Analyst
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div id="layoutSidenav_content">
+        <main>
+            <div class="container-fluid">
+                <!-- Your content here -->
+            </div>
+        </main>
+    </div>
+</div>
