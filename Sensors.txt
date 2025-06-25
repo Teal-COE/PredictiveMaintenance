@@ -1,0 +1,139 @@
+MODELS.PY
+
+from django.db import models
+
+class Machine(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class MachineElement(models.Model):
+    machine = models.ForeignKey(Machine, on_delete=models.CASCADE, related_name='elements')
+    sensor_name = models.CharField(max_length=100)
+    tag = models.CharField()
+    server_ip = models.CharField(max_length=100) 
+
+    element_type = models.CharField(max_length=20, blank=True)
+    upper_limit = models.FloatField(null=True, blank=True)
+    lower_limit = models.FloatField(max_length=50, blank=True)
+    organization_id = models.IntegerField(null=True, blank=True)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.element_name} ({self.machine.name})"
+
+
+
+
+VIEWS.PY
+
+
+
+from django.shortcuts import render
+from .models import Machine
+
+def machine_list(request):
+    machines = Machine.objects.prefetch_related('elements').all()
+    return render(request, 'machine_monitor/machine_list.html', {'machines': machines})
+
+
+
+
+URLS.PY(1)
+
+
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('', views.machine_list, name='machine_list'),
+]
+
+
+
+
+URLS.PY(2)
+
+
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('monitor/', include('machine_monitor.urls')),
+]
+
+
+
+
+MACHINE_LIST.HTML
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Machine List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Machine List</h2>
+    <div class="accordion" id="machineAccordion">
+        {% for machine in machines %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="heading{{ machine.id }}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse{{ machine.id }}" aria-expanded="false"
+                            aria-controls="collapse{{ machine.id }}">
+                        {{ machine.name }}
+                    </button>
+                </h2>
+                <div id="collapse{{ machine.id }}" class="accordion-collapse collapse"
+                     aria-labelledby="heading{{ machine.id }}" data-bs-parent="#machineAccordion">
+                    <div class="accordion-body">
+                        <table class="table table-bordered">
+                            <thead>
+                            <tr>
+                                <th>Sensor Name</th>
+                                <th>Tag</th>
+                                <th>Server IP</th>
+                                <th>Element Type</th>
+                                <th>Upper Limit</th>
+                                <th>Lower Limit</th>
+                                <th>Organization ID</th>
+                            </thead>
+                            <tbody>
+                            {% for element in machine.elements.all %}
+                                <tr>
+                                    <td>{{ element.sensor_name }}</td>
+                                    <td>{{ element.tag }}</td>
+                                    <td>{{ element.sever_ip }}</td>
+                                    <td>{{ element.element_type }}</td>
+                                    <td>{{ element.upper_limit }}</td>
+                                    <td>{{ element.lower_limit }}</td>
+                                    <td>{{ element.organization_id }}</td>
+                                    <td>{{ element.active}}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
